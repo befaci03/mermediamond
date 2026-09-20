@@ -61,7 +61,8 @@
     "price": "Pris",
     "item_name": "Genstand",
     "invalid_value": "Ugyldig værdi",
-    "no_accounts": "Der er i øjeblikket ingen konti"
+    "no_accounts": "Der er i øjeblikket ingen konti",
+    "no_connection": "Kan ikke faa kontakt med bankserveren"
   },
   "server": {
     "no_accounts": "Der er i øjeblikket ingen konti",

@@ -61,7 +61,8 @@
     "price": "Price",
     "item_name": "Item",
     "invalid_value": "Invalid value",
-    "no_accounts": "There are no accounts at the moment"
+    "no_accounts": "There are no accounts at the moment",
+    "no_connection": "Cannot reach the bank server"
   },
   "server": {
     "no_accounts": "There are no accounts at the moment",

@@ -61,7 +61,8 @@
     "price": "Pris",
     "item_name": "Föremål",
     "invalid_value": "Ogiltigt värde",
-    "no_accounts": "Det finns inga konton för tillfället"
+    "no_accounts": "Det finns inga konton för tillfället",
+    "no_connection": "Kan inte na bankservern"
   },
   "server": {
     "no_accounts": "Det finns inga konton för tillfället",

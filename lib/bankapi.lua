@@ -9,23 +9,28 @@
 -- os.loadAPI("lib/bankapi.lua") before os.loadAPI resolves the modules.
 
 -- Load the translation helper (tk) if it isn't loaded yet
-if (tk == nil) then
+if (_G.tk == nil) then
     if (fs.exists("lang/languages.lua")) then
-        os.loadAPI("lang/languages.lua")
+        _G.tk = dofile("lang/languages.lua")
     elseif (fs.exists("../lang/languages.lua")) then
-        os.loadAPI("../lang/languages.lua")
+        _G.tk = dofile("../lang/languages.lua")
     elseif (fs.exists("disk/lang/languages.lua")) then
-        os.loadAPI("disk/lang/languages.lua")
+        _G.tk = dofile("disk/lang/languages.lua")
     end
 end
 
 -- Load the updater API if it isn't loaded yet
-if (updateAvailable == nil) then
-    if (fs.exists("updater.lua")) then os.loadAPI("updater.lua")
-    elseif (fs.exists("../updater.lua")) then os.loadAPI("../updater.lua") end
+if (_G.updater == nil) then
+    if (fs.exists("updater.lua")) then _G.updater = dofile("updater.lua")
+    elseif (fs.exists("../updater.lua")) then _G.updater = dofile("../updater.lua") end
 end
 
 -------------------- Load the modules --------------------
+-- IMPORTANT: these are loaded with dofile() and assigned as GLOBALS.
+-- os.loadAPI would run the module file in a fresh environment and only
+-- copy *globals* into the API table - the modules `return` their table,
+-- so under os.loadAPI the return value is lost and (because their
+-- contents are locals) bankapi ended up with no functions at all.
 -- Resolve module paths relative to this file (root-installed machines
 -- load bankapi.lua from lib/, phones from disk/lib/, etc.)
 local function findModule(name)
@@ -34,22 +39,17 @@ local function findModule(name)
     return "lib/"..name
 end
 
-local uilibPath = findModule("uilib.lua")
-local netPath = findModule("net.lua")
+if (_G.uilib == nil) then _G.uilib = dofile(findModule("uilib.lua")) end
+if (_G.net == nil) then _G.net = dofile(findModule("net.lua")) end
+if (_G.uilib == nil or _G.net == nil) then error("bankapi: failed to load uilib/net modules") end
 
-if (uilib == nil) then os.loadAPI(uilibPath) end
-if (net == nil) then os.loadAPI(netPath) end
-if (uilib == nil) then error("uilib module failed to load from "..uilibPath) end
-
--- Cards depend on the UI module
-if (cards == nil) then os.loadAPI(findModule("cards.lua")) end
+-- Cards depend on the UI module (visible as a global before loading)
+if (_G.cards == nil) then _G.cards = dofile(findModule("cards.lua")) end
 
 -------------------- Re-exports under classic bankapi.* names --------------------
 
--- Expose the sub-modules on the bankapi table too
-uilib = uilib
-net = net
-cards = cards
+-- uilib/net/cards are already globals (set above), so os.loadAPI
+-- copies them onto the bankapi table along with everything below.
 
 -- UI
 drawBox = uilib.drawBox
@@ -103,6 +103,10 @@ generateCVC = cards.generateCVC
 
 function showBalance(key)
     local tempClientData = getClientData() -- cached; one round-trip at most
+    if (tempClientData == nil or tempClientData[key] == nil) then
+        uilib.errorScreen(tk("api.no_connection"))
+        return
+    end
     uilib.drawBackground()
     local scrW, scrH = term.getSize()
 
@@ -133,6 +137,10 @@ end
 
 function transactionInfoScreen(log)
     local tempClientData = getClientData()
+    if (tempClientData == nil) then
+        uilib.errorScreen(tk("api.no_connection"))
+        return
+    end
 
     uilib.drawBackground()
     term.setCursorPos(1,2)
@@ -170,6 +178,10 @@ end
 function transactionLogScreen(key)
     local tempClientData = getClientData() -- cached; one round-trip at most
     local backwardsLogs = getTransactionLog(key)
+    if (tempClientData == nil or backwardsLogs == nil) then
+        uilib.errorScreen(tk("api.no_connection"))
+        return
+    end
     local logs = {}
 
     local logCount = #backwardsLogs
@@ -322,6 +334,10 @@ end
 
 function selectAccountScreen(steps, currentStep, disabledAccount, overrideClientData)
     local clientData = overrideClientData
-    if (clientData == nil) then clientData = getClientData() end
+    if (clientData == nil) then clientData = getClientData(true) end
+    if (clientData == nil) then
+        uilib.errorScreen(tk("api.no_connection"))
+        return nil
+    end
     return uilib.selectAccountScreen(steps, currentStep, disabledAccount, clientData)
 end

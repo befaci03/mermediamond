@@ -61,7 +61,8 @@
     "price": "Fiyat",
     "item_name": "Eşya",
     "invalid_value": "Geçersiz değer",
-    "no_accounts": "Şu anda hiç hesap yok"
+    "no_accounts": "Şu anda hiç hesap yok",
+    "no_connection": "Banka sunucusuna ulasilamiyor"
   },
   "server": {
     "no_accounts": "Şu anda hiç hesap yok",

@@ -61,7 +61,8 @@
     "price": "Cena",
     "item_name": "Předmět",
     "invalid_value": "Neplatná hodnota",
-    "no_accounts": "Momentálně nejsou žádné účty"
+    "no_accounts": "Momentálně nejsou žádné účty",
+    "no_connection": "Nelze se pripojit k serveru banky"
   },
   "server": {
     "no_accounts": "Momentálně nejsou žádné účty",

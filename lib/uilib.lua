@@ -466,6 +466,7 @@ end
 -- Shared core for error/success/wait: clear the screen in `bg`, draw the
 -- centered message (string or table of lines). Returns the screen size.
 local function messageScreen(bg, message)
+    if (message == nil) then message = tk("api.no_connection") end
     term.setBackgroundColor(bg)
     term.setTextColor(colors.white)
     term.clear()

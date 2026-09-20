@@ -1,0 +1,6 @@
+# legacy artifacts from the old per-file minifier
+*.min.*
+!minified/.min.map
+
+# python
+**/*/__pycache__/

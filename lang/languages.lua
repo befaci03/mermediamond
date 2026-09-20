@@ -25,7 +25,8 @@ local memo = {} -- memo[lang][sel] = resolved value (skips resolve() on repeats)
 
 -- Load the persisted MermeGold settings (if any) so settings.get("lang")
 -- works even in programs that never call settings.load themselves.
-local persistedSettings = ".mermegold_settings"
+-- All settings live in the shared .mermediamond/ folder.
+local persistedSettings = ".mermediamond/settings"
 if (fs.exists(persistedSettings) and not settings.get("langLoaded")) then
 	settings.load(persistedSettings)
 	settings.set("langLoaded", true)
@@ -156,3 +157,5 @@ if (loadedLang == nil) then loadedLang = loadLang("en-us") end
 if (loadedLang ~= nil) then for k, v in pairs(loadedLang) do _G[k] = v end end
 
 _G.tk = tk
+
+return tk

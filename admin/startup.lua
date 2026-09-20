@@ -22,7 +22,10 @@ end
 
 peripheral.find("modem", rednet.open)
 
-os.loadAPI("bankapi.lua")
+-- bankapi lives in lib/ since the API split (root copy = legacy layout)
+if (fs.exists("lib/bankapi.lua")) then os.loadAPI("lib/bankapi.lua")
+elseif (fs.exists("bankapi.lua")) then os.loadAPI("bankapi.lua")
+else error("bankapi not found: lib/bankapi.lua is missing") end
 local serverData = bankapi.getServerData()
 local lang = serverData.lang
 
@@ -162,7 +165,26 @@ while true do
 			-- flattened as startup.lua), so fetch it from the repo instead.
 			local appBranch = "main"
 			local appBase = "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..appBranch
-			shell.run("wget "..appBase.."/phone/app.lua disk/startup.lua")
+			-- prefer the minified build (name resolved via .min.map), fall back to source
+			if (http ~= nil) then
+				local res = http.get(appBase.."/minified/.min.map")
+				if (res ~= nil) then
+					local map = textutils.unserialiseJSON(res.readAll())
+					res.close()
+					if (map ~= nil) then
+						-- map is {minName: sourcePath}; invert to find the app's min name
+						for minName, srcPath in pairs(map) do
+							if (srcPath == "phone/app.lua") then
+								shell.run("wget "..appBase.."/minified/"..minName.." disk/startup.lua")
+								break
+							end
+						end
+					end
+				end
+			end
+			if (not fs.exists("disk/startup.lua")) then
+				shell.run("wget "..appBase.."/phone/app.lua disk/startup.lua")
+			end
 			if (not fs.exists("disk/startup.lua")) then
 				bankapi.errorScreen("Failed to download the mobile app (no internet?)")
 			else
@@ -173,6 +195,11 @@ while true do
 				fs.copy("lib/uilib.lua", "disk/lib/uilib.lua")
 				fs.copy("lib/net.lua", "disk/lib/net.lua")
 				fs.copy("lib/cards.lua", "disk/lib/cards.lua")
+				-- Copy the server modules (lib/net.lua serves files from this layout)
+				fs.makeDir("disk/server")
+				for _, srvFile in ipairs({"config.lua", "db.lua", "menu.lua"}) do
+					if (fs.exists("server/"..srvFile)) then fs.copy("server/"..srvFile, "disk/server/"..srvFile) end
+				end
 				-- Copy the language files so tk() works on the phone
 				fs.delete("disk/lang")
 				fs.makeDir("disk/lang")

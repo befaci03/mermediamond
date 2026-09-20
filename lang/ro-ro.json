@@ -61,7 +61,8 @@
     "price": "Preț",
     "item_name": "Obiect",
     "invalid_value": "Valoare invalidă",
-    "no_accounts": "Nu există conturi momentan"
+    "no_accounts": "Nu există conturi momentan",
+    "no_connection": "Nu se poate conecta la serverul bancii"
   },
   "server": {
     "no_accounts": "Nu există conturi momentan",

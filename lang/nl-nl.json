@@ -61,7 +61,8 @@
     "price": "Prijs",
     "item_name": "Item",
     "invalid_value": "Ongeldige waarde",
-    "no_accounts": "Er zijn momenteel geen rekeningen"
+    "no_accounts": "Er zijn momenteel geen rekeningen",
+    "no_connection": "Kan de bankserver niet bereiken"
   },
   "server": {
     "no_accounts": "Er zijn momenteel geen rekeningen",

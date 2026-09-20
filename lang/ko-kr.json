@@ -61,7 +61,8 @@
     "price": "가격",
     "item_name": "아이템",
     "invalid_value": "잘못된 값",
-    "no_accounts": "현재 계좌가 없습니다"
+    "no_accounts": "현재 계좌가 없습니다",
+    "no_connection": "은행 서버에 연결할 수 없습니다"
   },
   "server": {
     "no_accounts": "현재 계좌가 없습니다",

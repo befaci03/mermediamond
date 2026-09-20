@@ -9,10 +9,40 @@ local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr
 -- so relative paths would install everything onto the disk instead of
 -- the machine's own filesystem.
 
--- Downloads one file from the repo. Returns true when it exists afterwards.
+-- Minified build map: maps source paths -> randomized names in minified/.
+-- Cached on first use; false means "not available, use source files".
+local minifiedMap = nil
+local function getMinifiedMap()
+    if (minifiedMap ~= nil) then return minifiedMap end
+    minifiedMap = false
+    if (http ~= nil) then
+        local res = http.get(repoBase.."/minified/.min.map")
+        if (res ~= nil) then
+            local content = res.readAll()
+            res.close()
+            local map = textutils.unserialiseJSON(content)
+            if (map ~= nil) then
+                -- invert: source path -> minified name
+                local bySource = {}
+                for minName, srcPath in pairs(map) do bySource[srcPath] = minName end
+                minifiedMap = bySource
+            end
+        end
+    end
+    return minifiedMap
+end
+
+-- Downloads one file from the repo (minified version when available).
+-- Returns true when it exists afterwards.
 function installFile(repoPath, localPath)
     fs.delete(localPath)
-    shell.run("wget "..repoBase.."/"..repoPath.." "..localPath)
+    local map = getMinifiedMap()
+    if (map ~= false and map[repoPath] ~= nil) then
+        shell.run("wget "..repoBase.."/minified/"..map[repoPath].." "..localPath)
+    end
+    if (not fs.exists(localPath)) then
+        shell.run("wget "..repoBase.."/"..repoPath.." "..localPath)
+    end
     if (fs.exists(localPath)) then return true end
     print("WARNING: failed to download '"..repoPath.."' (no internet?)")
     return false
@@ -119,8 +149,13 @@ function installBankServer()
     installLangFiles()
     installUpdater()
     installBankAPI()
+    fs.makeDir("/server")
+    installFile("server/startup.lua", "/server/startup.lua") -- Bank Server
+    installFile("server/config.lua", "/server/config.lua")
+    installFile("server/db.lua", "/server/db.lua")
+    installFile("server/menu.lua", "/server/menu.lua")
     fs.delete("/startup.lua")
-    installFile("server/startup.lua", "/startup.lua") -- Bank Server
+    fs.copy("/server/startup.lua", "/startup.lua") -- boot from the installed copy
     clearDiskBoot()
     quit()
 end

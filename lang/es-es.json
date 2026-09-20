@@ -61,7 +61,8 @@
     "price": "Precio",
     "item_name": "Articulo",
     "invalid_value": "Valor invalido",
-    "no_accounts": "No hay cuentas por el momento"
+    "no_accounts": "No hay cuentas por el momento",
+    "no_connection": "No se puede conectar con el servidor del banco"
   },
   "server": {
     "no_accounts": "No hay cuentas por el momento",

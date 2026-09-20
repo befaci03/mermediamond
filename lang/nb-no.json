@@ -61,7 +61,8 @@
     "price": "Pris",
     "item_name": "Gjenstand",
     "invalid_value": "Ugyldig verdi",
-    "no_accounts": "Det er for øyeblikket ingen kontoer"
+    "no_accounts": "Det er for øyeblikket ingen kontoer",
+    "no_connection": "Faar ikke kontakt med bankserveren"
   },
   "server": {
     "no_accounts": "Det er for øyeblikket ingen kontoer",

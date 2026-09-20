@@ -4,7 +4,10 @@
 print("Finding ender modem...")
 peripheral.find("modem", rednet.open)
 print("Modem found!")
-os.loadAPI("bankapi.lua")
+-- bankapi lives in lib/ since the API split (root copy = legacy layout)
+if (fs.exists("lib/bankapi.lua")) then os.loadAPI("lib/bankapi.lua")
+elseif (fs.exists("bankapi.lua")) then os.loadAPI("bankapi.lua")
+else error("bankapi not found: lib/bankapi.lua is missing") end
 local serverData = bankapi.getServerData()
 local lang = serverData.lang
 

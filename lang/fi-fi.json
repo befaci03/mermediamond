@@ -61,7 +61,8 @@
     "price": "Hinta",
     "item_name": "Esine",
     "invalid_value": "Virheellinen arvo",
-    "no_accounts": "Tilejä ei ole tällä hetkellä"
+    "no_accounts": "Tilejä ei ole tällä hetkellä",
+    "no_connection": "Pankkipalvelimeen ei saada yhteytta"
   },
   "server": {
     "no_accounts": "Tilejä ei ole tällä hetkellä",

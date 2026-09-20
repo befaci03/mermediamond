@@ -61,7 +61,8 @@
     "price": "价格",
     "item_name": "物品",
     "invalid_value": "无效数值",
-    "no_accounts": "当前没有任何账户"
+    "no_accounts": "当前没有任何账户",
+    "no_connection": "无法连接到银行服务器"
   },
   "server": {
     "no_accounts": "当前没有任何账户",

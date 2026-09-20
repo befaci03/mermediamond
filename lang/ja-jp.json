@@ -61,7 +61,8 @@
     "price": "価格",
     "item_name": "アイテム",
     "invalid_value": "無効な値",
-    "no_accounts": "現在アカウントがありません"
+    "no_accounts": "現在アカウントがありません",
+    "no_connection": "銀行サーバーに接続できません"
   },
   "server": {
     "no_accounts": "現在アカウントがありません",

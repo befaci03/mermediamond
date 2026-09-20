@@ -61,7 +61,8 @@
     "price": "Ár",
     "item_name": "Tárgy",
     "invalid_value": "Érvénytelen érték",
-    "no_accounts": "Jelenleg nincsenek számlák"
+    "no_accounts": "Jelenleg nincsenek számlák",
+    "no_connection": "Nem elerheto a bank szervere"
   },
   "server": {
     "no_accounts": "Jelenleg nincsenek számlák",

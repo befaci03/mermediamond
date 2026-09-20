@@ -49,7 +49,7 @@ end
 
 local function filesForRaw(program)
 	if (program == "server") then
-		return { "server/startup.lua", libFiles(), updaterFiles() }
+		return { "server/startup.lua", "server/config.lua", "server/db.lua", "server/menu.lua", libFiles(), updaterFiles() }
 	elseif (program == "atm") then
 		if (turtle ~= nil) then
 			return { "atm/startup.lua", libFiles(), updaterFiles() } -- the assistant turtle
@@ -370,3 +370,10 @@ function autoUpdate(program, silent)
 		end
 	end
 end
+
+return { parseVer = parseVer, readVer = readVer, fnv1a = fnv1a,
+	compareVersions = compareVersions, fetchRemoteVer = fetchRemoteVer,
+	updateAvailable = updateAvailable, updateProgram = updateProgram,
+	updateLangFiles = updateLangFiles, detectProgram = detectProgram,
+	servedFileChunk = nil, serveFileChunk = serveFileChunk, autoUpdate = autoUpdate,
+	filesFor = filesFor }
