@@ -158,24 +158,32 @@ while true do
 			term.clear()
 			print("Installing Mermediamond app in inserted phone...")
 			shell.run("delete disk/startup.lua")
-			shell.run("copy phone/app.lua disk/startup.lua")
-			-- Copy the split bank API modules
-			fs.delete("disk/lib")
-			fs.makeDir("disk/lib")
-			fs.copy("lib/bankapi.lua", "disk/lib/bankapi.lua")
-			fs.copy("lib/uilib.lua", "disk/lib/uilib.lua")
-			fs.copy("lib/net.lua", "disk/lib/net.lua")
-			fs.copy("lib/cards.lua", "disk/lib/cards.lua")
-			-- Copy the language files so tk() works on the phone
-			fs.delete("disk/lang")
-			fs.makeDir("disk/lang")
-			for _, langFile in ipairs(fs.list("lang")) do
-				fs.copy("lang/"..langFile, "disk/lang/"..langFile)
+			-- The app's source is not on this terminal (everything is installed
+			-- flattened as startup.lua), so fetch it from the repo instead.
+			local appBranch = "main"
+			local appBase = "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..appBranch
+			shell.run("wget "..appBase.."/phone/app.lua disk/startup.lua")
+			if (not fs.exists("disk/startup.lua")) then
+				bankapi.errorScreen("Failed to download the mobile app (no internet?)")
+			else
+				-- Copy the split bank API modules
+				fs.delete("disk/lib")
+				fs.makeDir("disk/lib")
+				fs.copy("lib/bankapi.lua", "disk/lib/bankapi.lua")
+				fs.copy("lib/uilib.lua", "disk/lib/uilib.lua")
+				fs.copy("lib/net.lua", "disk/lib/net.lua")
+				fs.copy("lib/cards.lua", "disk/lib/cards.lua")
+				-- Copy the language files so tk() works on the phone
+				fs.delete("disk/lang")
+				fs.makeDir("disk/lang")
+				for _, langFile in ipairs(fs.list("lang")) do
+					fs.copy("lang/"..langFile, "disk/lang/"..langFile)
+				end
+				-- Copy the updater so the phone can update itself
+				if (fs.exists("updater.lua")) then fs.copy("updater.lua", "disk/updater.lua") end
+				if (fs.exists("ver")) then fs.copy("ver", "disk/ver") end
+				bankapi.successScreen(tk("pocket.installed"))
 			end
-			-- Copy the updater so the phone can update itself
-			if (fs.exists("updater.lua")) then fs.copy("updater.lua", "disk/updater.lua") end
-			if (fs.exists(".mermediamond/ver")) then fs.copy(".mermediamond/ver", "disk/ver") end
-			bankapi.successScreen(tk("pocket.installed"))
 		else
 			bankapi.errorScreen(tk("pocket.insert_pocket"))
 		end

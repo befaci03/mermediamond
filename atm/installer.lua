@@ -4,6 +4,8 @@ local modems = 0
 local computers = 0
 local enderModems = 0
 local craftingTables = 0
+local diskDrives = 0
+local disks = 0
 
 local branch = "main"
 local baseUrl = "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..branch
@@ -25,6 +27,69 @@ print("The ATM contraption itself requires a specific setup which I can build fo
 print("")
 print("Press any key to continue...")
 os.pullEvent("key")
+
+-------------------- Position check --------------------
+-- I must be placed ONE BLOCK UP (on top of a single block) with empty
+-- surroundings. I break the block below me: its spot is used for the
+-- ATM's disk drive, so there must NOT be a disk drive below me.
+print("")
+print("Checking my position...")
+
+while (turtle.detectDown()) do
+    if (peripheral.getType("bottom") == "drive") then
+        term.clear()
+        term.setCursorPos(1,1)
+        print("=== ATM Setup cancelled ===")
+        print("")
+        print("There is a disk drive below me - I can't break that!")
+        print("(If you started me from an installer disk, run the")
+        print("installer from my own filesystem instead.)")
+        print("")
+        print("Place me ONE BLOCK UP on a single block instead:")
+        print("I will break that block and use its spot for the")
+        print("ATM's disk drive.")
+        return
+    end
+    if (not turtle.digDown()) then
+        term.clear()
+        term.setCursorPos(1,1)
+        print("=== ATM Setup cancelled ===")
+        print("")
+        print("The block below me is unbreakable!")
+        print("Place me one block up on a block I can dig.")
+        return
+    end
+end
+
+-- True when front/back/left/right and the space above are all clear
+local function surroundingsClear()
+    local clear = (not turtle.detect()) and (not turtle.detectUp())
+    turtle.turnRight()
+    if (turtle.detect()) then clear = false end
+    turtle.turnRight()
+    if (turtle.detect()) then clear = false end
+    turtle.turnRight()
+    if (turtle.detect()) then clear = false end
+    turtle.turnRight() -- face the original direction again
+    return clear
+end
+
+if (not surroundingsClear()) then
+    term.clear()
+    term.setCursorPos(1,1)
+    print("=== ATM Setup cancelled ===")
+    print("")
+    print("I need to be in an empty space: all of my surroundings")
+    print("(front, back, left, right and above) must be clear.")
+    print("")
+    print("I also need to be placed ONE BLOCK UP, on top of a single")
+    print("block, so I have room to build the ATM around me.")
+    print("")
+    print("Reposition me and run me again.")
+    return
+end
+print("Position OK!")
+sleep(1)
 
 local requiredFuel = 10
 while (turtle.getFuelLevel() < requiredFuel) do
@@ -59,6 +124,23 @@ while (turtle.getFuelLevel() < requiredFuel) do
     end
 end
 
+-- I also need to be able to reach the level below me: that is where
+-- the ATM's disk drive goes (directly under the ATM computer).
+if (not turtle.down()) then
+    term.clear()
+    term.setCursorPos(1,1)
+    print("=== ATM Setup cancelled ===")
+    print("")
+    print("The space one level below me is blocked!")
+    print("")
+    print("I need to be placed ONE BLOCK UP, on top of a single block")
+    print("above the ground, so I can build the ATM in the air.")
+    print("")
+    print("Reposition me and run me again.")
+    return
+end
+turtle.up()
+
 while (true) do
     chests = 0
     barrels = 0
@@ -66,6 +148,8 @@ while (true) do
     computers = 0
     enderModems = 0
     craftingTables = 0
+    diskDrives = 0
+    disks = 0
     for i=1, 16 do
         local item = turtle.getItemDetail(i)
         if (item ~= nil) then
@@ -75,6 +159,8 @@ while (true) do
             elseif (item.name == "computercraft:wireless_modem_advanced") then enderModems = enderModems + item.count
             elseif (item.name == "computercraft:computer_advanced") then computers = computers + item.count
             elseif (item.name == "minecraft:crafting_table") then craftingTables = craftingTables + item.count
+            elseif (item.name == "computercraft:disk_drive") then diskDrives = diskDrives + item.count
+            elseif (item.name == "computercraft:disk") then disks = disks + item.count
             end
         end
     end
@@ -100,6 +186,8 @@ while (true) do
     if (not checklistItem("An ender modem", enderModems, 1)) then ready = false end
     if (not checklistItem("An advanced computer", computers, 1)) then ready = false end
     if (not checklistItem("A crafting table", craftingTables, 1)) then ready = false end
+    if (not checklistItem("A disk drive", diskDrives, 1)) then ready = false end
+    if (not checklistItem("A floppy disk", disks, 1)) then ready = false end
 
     if (ready) then
         print("")
@@ -199,7 +287,51 @@ if (not hasWorkbench) then
     turtle.equipRight()
 end
 
+-- Place the disk drive in the spot freed by breaking the block below,
+-- then write the ATM Terminal setup onto the floppy inside it. The ATM
+-- computer (placed on top of the drive afterwards) boots from this disk
+-- and installs its terminal by itself.
 back()
+down()
+
+selectItem("computercraft:disk_drive")
+while (not turtle.place()) do
+    -- the spot should be free (I broke the block below me), but clear
+    -- it anyway in case I was placed on a taller pillar
+    if (not turtle.dig()) then
+        print("The spot in front of/below me is blocked and unbreakable!")
+        sleep(2)
+    end
+end
+selectItem("computercraft:disk")
+while (not turtle.place()) do
+    print("Could not insert the floppy disk into the disk drive...")
+    print("(Make sure the drive is empty and the disk is a data disk.)")
+    sleep(2)
+end
+
+local diskPath = disk.getMountPath("front")
+if (diskPath == nil) then
+    print("WARNING: can't read the floppy disk I just inserted!")
+    print("The ATM Terminal will have to be installed manually")
+    print("(use the installer's 'Install ATM Terminal' option).")
+    sleep(3)
+else
+    print("Writing the ATM Terminal setup to the floppy disk...")
+    for _, stale in ipairs({"startup.lua", "installer.lua", "autosetup.lua"}) do
+        if (fs.exists(diskPath.."/"..stale)) then fs.delete(diskPath.."/"..stale) end
+    end
+    shell.run("wget "..baseUrl.."/atm/bootstrap.lua "..diskPath.."/startup.lua")
+    if (fs.exists(diskPath.."/startup.lua")) then
+        print("Setup disk ready!")
+    else
+        print("WARNING: failed to write the setup disk (no internet?)")
+        print("The ATM Terminal will have to be installed manually.")
+    end
+    sleep(2)
+end
+
+up()
 selectItem("computercraft:computer_advanced")
 place()
 sleep(1)
@@ -234,14 +366,17 @@ place()
 
 print("Installing Mermediamond ATM Assistant ...")
 
+-- NOTE: absolute "/..." destinations so everything lands on this
+-- turtle's own filesystem and not on the boot disk.
+
 -- Download the lang/ folder (translation files + tk() helper)
 print("Downloading language files...")
-fs.delete("lang")
-fs.makeDir("lang")
-shell.run("wget "..baseUrl.."/lang/languages.lua lang/languages.lua")
-local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
+fs.delete("/lang")
+fs.makeDir("/lang")
+shell.run("wget "..baseUrl.."/lang/languages.lua /lang/languages.lua")
+local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "pl-pl", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
 for _, lang in ipairs(languages) do
-    shell.run("wget "..baseUrl.."/lang/"..lang..".json lang/"..lang..".json")
+    shell.run("wget "..baseUrl.."/lang/"..lang..".json /lang/"..lang..".json")
 end
 if (fs.exists("lang/languages.lua")) then
     print("Language files installed!")
@@ -251,20 +386,20 @@ else
 end
 
 print("Downloading updater...")
-shell.run("wget "..baseUrl.."/updater.lua updater.lua")
-shell.run("wget "..baseUrl.."/ver .mermediamond/ver")
+shell.run("wget "..baseUrl.."/updater.lua /updater.lua")
+shell.run("wget "..baseUrl.."/ver /ver")
 
--- Download the split bank API modules into lib/
+-- Download the split bank API modules into /lib/
 print("Downloading bank API...")
-fs.delete("lib")
-fs.makeDir("lib")
-shell.run("wget "..baseUrl.."/lib/bankapi.lua lib/bankapi.lua")
-shell.run("wget "..baseUrl.."/lib/uilib.lua lib/uilib.lua")
-shell.run("wget "..baseUrl.."/lib/net.lua lib/net.lua")
-shell.run("wget "..baseUrl.."/lib/cards.lua lib/cards.lua")
+fs.delete("/lib")
+fs.makeDir("/lib")
+shell.run("wget "..baseUrl.."/lib/bankapi.lua /lib/bankapi.lua")
+shell.run("wget "..baseUrl.."/lib/uilib.lua /lib/uilib.lua")
+shell.run("wget "..baseUrl.."/lib/net.lua /lib/net.lua")
+shell.run("wget "..baseUrl.."/lib/cards.lua /lib/cards.lua")
 
-fs.delete("startup.lua")
-shell.run("wget "..baseUrl.."/atm/startup.lua startup.lua") -- ATM Assistant
+fs.delete("/startup.lua")
+shell.run("wget "..baseUrl.."/atm/startup.lua /startup.lua") -- ATM Assistant
 
 print("Dropping leftover items...")
 for i=1, 16 do

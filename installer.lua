@@ -2,31 +2,69 @@
 
 local branch = "main"
 local repoBase = "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..branch
-local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
+local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "pl-pl", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
+
+-- NOTE: all downloads use absolute "/..." destinations on purpose!
+-- This installer runs FROM the boot disk (current directory = /disk),
+-- so relative paths would install everything onto the disk instead of
+-- the machine's own filesystem.
+
+-- Downloads one file from the repo. Returns true when it exists afterwards.
+function installFile(repoPath, localPath)
+    fs.delete(localPath)
+    shell.run("wget "..repoBase.."/"..repoPath.." "..localPath)
+    if (fs.exists(localPath)) then return true end
+    print("WARNING: failed to download '"..repoPath.."' (no internet?)")
+    return false
+end
 
 -- Downloads the lang/ folder (translation files + tk() helper)
--- plus the updater API and its ver file.
--- Required by bankapi.lua and every program's localization.
 function installLangFiles()
     print("Downloading language files...")
-    fs.delete("lang")
-    fs.makeDir("lang")
-    shell.run("wget "..repoBase.."/lang/languages.lua lang/languages.lua")
-    for _, lang in ipairs(languages) do shell.run("wget "..repoBase.."/lang/"..lang..".json lang/"..lang..".json") end
-    if (fs.exists("lang/languages.lua")) then print("Language files installed!") else
+    fs.delete("/lang")
+    fs.makeDir("/lang")
+    installFile("lang/languages.lua", "/lang/languages.lua")
+    for _, lang in ipairs(languages) do installFile("lang/"..lang..".json", "/lang/"..lang..".json") end
+    if (fs.exists("/lang/languages.lua")) then print("Language files installed!") else
         print("WARNING: language files failed to download.")
         print("Programs will show raw translation keys instead of text.")
     end
+end
 
+-- Downloads the updater API and its ver file (at the root, where
+-- updater.readVer() and updateProgram() expect them).
+function installUpdater()
     print("Downloading updater...")
-    shell.run("wget "..repoBase.."/updater.lua updater.lua")
-    shell.run("wget "..repoBase.."/ver .mermediamond/ver")
+    installFile("updater.lua", "/updater.lua")
+    installFile("ver", "/ver")
+end
+
+-- Downloads the split bank API modules into /lib
+function installBankAPI()
+    print("Downloading bank API...")
+    fs.delete("/lib")
+    fs.makeDir("/lib")
+    installFile("lib/bankapi.lua", "/lib/bankapi.lua")
+    installFile("lib/uilib.lua", "/lib/uilib.lua")
+    installFile("lib/net.lua", "/lib/net.lua")
+    installFile("lib/cards.lua", "/lib/cards.lua")
+    if (fs.exists("/lib/bankapi.lua") and fs.exists("/lib/uilib.lua") and fs.exists("/lib/net.lua") and fs.exists("/lib/cards.lua")) then
+        print("Bank API installed!")
+    else print("WARNING: bank API failed to download.") end
+end
+
+-- Removes the installer's boot file from the disk it is running from,
+-- so the next reboot starts the freshly installed program instead of
+-- this installer. The disk can simply stay in the drive.
+function clearDiskBoot()
+    local running = shell.getRunningProgram()
+    if (running == nil) then return end
+    local dir = fs.getDir(running)
+    if (dir == nil or dir == "") then return end -- running from the root, not a disk
+    if (fs.exists(dir.."/startup.lua")) then fs.delete(dir.."/startup.lua") end
 end
 
 function quit()
-    local diskdrive = peripheral.find("drive")
-    if (diskdrive.isDiskPresent()) then diskdrive.ejectDisk() end
-    print("Disk ejected")
     print("Rebooting...")
     sleep(1)
     os.reboot()
@@ -40,9 +78,9 @@ function optionsMenu(title, description, options)
         print("=== "..title.." ===")
         print()
 
-        for _, v in pairs(description) do print(v) end
+        for _, v in ipairs(description) do print(v) end
         print()
-        for k, v in pairs(options) do
+        for k, v in ipairs(options) do
             local text = v
             if (selectedOption == k) then text = "-> "..v.." <-"
             else text = "   "..v end
@@ -65,56 +103,70 @@ function optionsMenu(title, description, options)
     end
 end
 
--- Downloads the split bank API modules into lib/
-function installBankAPI()
-    print("Downloading bank API...")
-    fs.delete("lib")
-    fs.makeDir("lib")
-    shell.run("wget "..repoBase.."/lib/bankapi.lua lib/bankapi.lua")
-    shell.run("wget "..repoBase.."/lib/uilib.lua lib/uilib.lua")
-    shell.run("wget "..repoBase.."/lib/net.lua lib/net.lua")
-    shell.run("wget "..repoBase.."/lib/cards.lua lib/cards.lua")
-    if (fs.exists("lib/bankapi.lua") and fs.exists("lib/uilib.lua") and fs.exists("lib/net.lua") and fs.exists("lib/cards.lua")) then
-        print("Bank API installed!")
-    else print("WARNING: bank API failed to download.") end
-end
-
 function installStoreClerk()
     print("Installing Mermediamond Store Clerk...")
     installLangFiles()
+    installUpdater()
     installBankAPI()
-    fs.delete("startup.lua")
-    shell.run("wget "..repoBase.."/shopClerk/startup.lua startup.lua") -- Store clerk
+    fs.delete("/startup.lua")
+    installFile("shopClerk/startup.lua", "/startup.lua") -- Store clerk
+    clearDiskBoot()
     quit()
-end
-
-function installATMTurtle()
-    print("Installing Mermediamond ATM Assistant ...")
-    installLangFiles()
-    fs.delete("autosetup.lua")
-    shell.run("wget "..repoBase.."/atm/installer.lua autosetup.lua") -- ATM Assistant autosetup
-    print("Running autosetup...")
-    sleep(1)
-    shell.run("autosetup")
-    -- dont quit, need the disk to install ATM Interface
 end
 
 function installBankServer()
     print("Installing Mermediamond Bank Server...")
     installLangFiles()
+    installUpdater()
     installBankAPI()
-    fs.delete("startup.lua")
-    shell.run("wget "..repoBase.."/server/startup.lua startup.lua") -- Bank Server
+    fs.delete("/startup.lua")
+    installFile("server/startup.lua", "/startup.lua") -- Bank Server
+    clearDiskBoot()
     quit()
 end
 
 function installAdminTerminal()
     print("Installing Mermediamond Admin terminal...")
     installLangFiles()
+    installUpdater()
     installBankAPI()
-    fs.delete("startup.lua")
-    shell.run("wget "..repoBase.."/admin/startup.lua startup.lua") -- Admin Terminal
+    fs.delete("/startup.lua")
+    installFile("admin/startup.lua", "/startup.lua") -- Admin Terminal
+    clearDiskBoot()
     quit()
+end
+
+function installATMTerminal()
+    print("Installing Mermediamond ATM Terminal...")
+    installLangFiles()
+    installUpdater()
+    installBankAPI()
+    fs.delete("/startup.lua")
+    installFile("atm/client.lua", "/startup.lua") -- ATM Terminal
+    clearDiskBoot()
+    quit()
+end
+
+function installATMTurtle()
+    print("Installing Mermediamond ATM Turtle (with auto-setup)...")
+    print("")
+    print("IMPORTANT - before the auto-setup starts, place me:")
+    print("  - ONE BLOCK UP, on top of a single block (I will break")
+    print("    that block and build the ATM in the air around me)")
+    print("  - with empty surroundings: nothing in front, behind,")
+    print("    left, right or above me")
+    print("  - NO disk drive below me!")
+    print("And put in my inventory: 4 chests, a barrel, a normal")
+    print("modem, an ender modem, an advanced computer, a crafting")
+    print("table, a disk drive and a floppy disk.")
+    print("")
+    print("Press any key to download and start the auto-setup...")
+    os.pullEvent("key")
+    fs.delete("/autosetup.lua")
+    installFile("atm/installer.lua", "/autosetup.lua")
+    print("Running auto-setup...")
+    sleep(1)
+    shell.run("/autosetup")
 end
 
 function showHelp()
@@ -144,7 +196,7 @@ function showHelp()
             print("=== Admin Terminals ===")
             print("")
             print("They should be an Advanced Computer, with a disk drive and an Ender Modem.")
-            print("These are password protected terminals for bank employees only. It is on these terminals that employees can create and delete accounts, link cards to users, install the mobile app on pocket computers, and other admin-only operations.")
+            print("These are password protected terminals for bank employees only. It is on these terminals that employees can create and delete accounts, issue paper cards, install the mobile app on pocket computers, and other admin-only operations.")
             print("")
             print("Press any key to go back...")
             os.pullEvent("key")
@@ -152,7 +204,8 @@ function showHelp()
             print("=== ATM ===")
             print("")
             print("The ATMs are a multi-block, multi-computer machine. They consist of a regular Turtle that takes care of crafting and moving items, and a terminal that acts as a user interface.")
-            print("There is an automatic setup with instructions to automatically construct and install an ATM. All you have to do is place a regular turtle on top of a disk drive, then using this disk install the 'ATM Turtle w/ auto-setup' program and follow the instructions.")
+            print("There is an automatic setup which builds the whole ATM for you. Place a regular turtle ONE BLOCK UP, on top of a single block, with empty space all around it (it breaks that block and builds there - no disk drive below it!). Give it 4 chests, a barrel, a normal modem, an ender modem, an advanced computer, a crafting table, a disk drive and a floppy disk.")
+            print("Then use this disk to run 'Install ATM Turtle (with auto-setup)' on the turtle and follow the instructions: it builds the contraption, installs itself as the money assistant, and writes a setup disk that makes the ATM's computer install its terminal automatically on first boot.")
             print("")
             print("Press any key to go back...")
             os.pullEvent("key")
@@ -160,7 +213,7 @@ function showHelp()
             print("=== Store Clerk ===")
             print("")
             print("The Store Clerk is an Advanced Turtle with an Ender modem on top of a disk drive, looking at a barrel or chest.")
-            print("It acts as a checkout for stores, where you can configure prices and names. People who use your shop can insert their card into the disk drive, get an automatic tally of the price of their items, and pay with their Mermediamond account directly.")
+            print("It acts as a checkout for stores, where you can configure prices and names. Customers read out their paper card: the clerk enters the card details, gets an automatic tally of the price of their items, and charges their Mermediamond account directly.")
             print("")
             print("Press any key to go back...")
             os.pullEvent("key")
@@ -176,8 +229,8 @@ function mainMenu()
         local options = {
             "Help",
             "Install Store Clerk",
-            "Install ATM",
-            "Cancel and eject",
+            "Install ATM Turtle (with auto-setup)",
+            "Cancel",
         }
         local selectedOption = optionsMenu("Install Mermediamond program", {"For Turtles"}, options)
         if (selectedOption == 1) then showHelp()
@@ -189,11 +242,13 @@ function mainMenu()
             "Help",
             "Install Bank Server",
             "Install Admin terminal",
-            "Cancel and eject"
+            "Install ATM Terminal",
+            "Cancel"
         })
         if (selectedOption == 1) then showHelp()
         elseif (selectedOption == 2) then installBankServer()
         elseif (selectedOption == 3) then installAdminTerminal()
+        elseif (selectedOption == 4) then installATMTerminal()
         else quit() end
     end
 end

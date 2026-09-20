@@ -15,6 +15,7 @@ local function getRepoBase() return "https://raw.githubusercontent.com/befaci03/
 -- Repo path -> local path on an installed machine.
 -- Every installer saves the program it runs as startup.lua.
 local pathMap = {
+	["server/startup.lua"] = "startup.lua",
 	["lib/bankapi.lua"] = "bankapi.lua",
 	["admin/startup.lua"] = "startup.lua",
 	["shopClerk/startup.lua"] = "startup.lua",
@@ -27,6 +28,12 @@ local pathMap = {
 -- The shared API modules every client needs
 local function libFiles()
 	return { "lib/bankapi.lua", "lib/uilib.lua", "lib/net.lua", "lib/cards.lua" }
+end
+
+-- updater.lua + ver: every machine needs them so the next update check
+-- compares the NEW version (and can still update itself afterwards).
+local function updaterFiles()
+	return { "updater.lua", "ver" }
 end
 
 -- Flatten nested file lists ({ "a.lua", libFiles() } -> { "a.lua", ... })
@@ -42,21 +49,21 @@ end
 
 local function filesForRaw(program)
 	if (program == "server") then
-		return { "server.lua", "lib/bankapi.lua", "lib/uilib.lua", "lib/net.lua", "lib/cards.lua", "updater.lua", "ver" }
+		return { "server/startup.lua", libFiles(), updaterFiles() }
 	elseif (program == "atm") then
 		if (turtle ~= nil) then
-			return { "atm/startup.lua", "lib/bankapi.lua", "lib/uilib.lua", "lib/net.lua", "lib/cards.lua" } -- the assistant turtle
+			return { "atm/startup.lua", libFiles(), updaterFiles() } -- the assistant turtle
 		else
-			return { "atm/client.lua", libFiles() } -- the terminal computer
+			return { "atm/client.lua", libFiles(), updaterFiles() } -- the terminal computer
 		end
 	elseif (program == "admin") then
-		return { "admin/startup.lua", libFiles() }
+		return { "admin/startup.lua", libFiles(), updaterFiles() }
 	elseif (program == "shop") then
-		return { "shopClerk/startup.lua", libFiles() }
+		return { "shopClerk/startup.lua", libFiles(), updaterFiles() }
 	elseif (program == "phone") then
-		return { "phone/app.lua", libFiles() }
+		return { "phone/app.lua", libFiles(), updaterFiles() }
 	elseif (program == "installer") then
-		return { "installer.lua", "atm/installer.lua" }
+		return { "installer.lua", "atm/installer.lua", "atm/bootstrap.lua" }
 	elseif (program == "updater") then
 		return { "updater.lua", "ver" }
 	elseif (program == "lang") then
@@ -65,7 +72,10 @@ local function filesForRaw(program)
 			"lang/es-es.json", "lang/de-de.json", "lang/de-at.json",
 			"lang/fr-fr.json", "lang/fr-be.json", "lang/nl-nl.json",
 			"lang/it-it.json", "lang/pt-br.json", "lang/pl-pl.json",
-			"lang/ru-ru.json", "lang/ar-sa.json", "lang/tr-tr.json", "lang/sv-se.json" }
+			"lang/ru-ru.json", "lang/ar-sa.json", "lang/tr-tr.json", "lang/sv-se.json",
+			"lang/ja-jp.json", "lang/zh-cn.json", "lang/ko-kr.json",
+			"lang/hu-hu.json", "lang/fi-fi.json", "lang/da-dk.json",
+			"lang/nb-no.json", "lang/cs-cz.json", "lang/el-gr.json", "lang/ro-ro.json" }
 	end
 	return nil
 end
@@ -254,22 +264,25 @@ end
 function updateLangFiles(dir) return updateProgram("lang", dir) end
 
 -- Which program is this computer running? Guessed from the files on disk.
+-- Programs are identified by the header comment of their startup file.
 function detectProgram(dir)
 	if (dir == nil) then dir = "" end
-	if (fs.exists(dir.."server.lua")) then return "server" end
-	if (turtle ~= nil and fs.exists(dir.."startup.lua")) then return "atm" end -- assistant turtle
 	if (fs.exists(dir.."catalog.txt") or fs.exists(dir.."owner.txt")) then return "shop" end
 	if (fs.exists(dir.."phone/app.lua") or fs.exists(dir.."mermeapp.lua")) then return "phone" end
-	-- Distinguish admin terminal from ATM terminal by the startup file header
 	if (fs.exists(dir.."startup.lua")) then
 		local f = fs.open(dir.."startup.lua", "r")
 		if (f ~= nil) then
 			local firstLine = f.readLine() or ""
 			f.close()
+			if (string.find(firstLine, "Bank Server", 1, true) ~= nil) then return "server" end
 			if (string.find(firstLine, "ATM Terminal", 1, true) ~= nil) then return "atm" end
+			if (string.find(firstLine, "ATM Assistant", 1, true) ~= nil) then return "atm" end
 			if (string.find(firstLine, "Admin Terminal", 1, true) ~= nil) then return "admin" end
+			if (string.find(firstLine, "Store clerk", 1, true) ~= nil) then return "shop" end
+			if (string.find(firstLine, "Mobile app", 1, true) ~= nil) then return "phone" end
+			if (turtle ~= nil) then return "atm" end -- assistant turtle fallback
+			return "admin"
 		end
-		return "admin"
 	end
 	return nil
 end

@@ -1,3 +1,4 @@
+-- ATM Assistant (the turtle)
 local linkedInterfaceID
 local clientInterface = peripheral.wrap("front")
 local storage = peripheral.wrap("bottom")
