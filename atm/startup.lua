@@ -1,5 +1,5 @@
 local linkedInterfaceID
-local clientInterface = peripheral.wrap("front") 
+local clientInterface = peripheral.wrap("front")
 local storage = peripheral.wrap("bottom")
 local workChest = peripheral.wrap("top")
 local serverData
@@ -15,9 +15,9 @@ if (f ~= nil) then
 	f.close()
 else
 	print("Finding interface...")
-	local sender, message = rednet.receive("mermegold_customer")
+	local sender, message = rednet.receive("mermediamond_customer")
     if (message == "hiring") then
-        rednet.send(sender, "offering", "mermegold_customer")
+        rednet.send(sender, "offering", "mermediamond_customer")
         linkedInterfaceID = sender
     end
 	print("interface found! #"..linkedInterfaceID)
@@ -33,7 +33,7 @@ local function processRequest(func, sender, data)
 		success = success,
 		response = response
 	}
-	rednet.send(sender, message, "mermegold_customer")
+	rednet.send(sender, message, "mermediamond_customer")
 end
 
 local function calculateValue()
@@ -197,7 +197,7 @@ end
 
 local function giveItems(currency, amount)
     print(currency.id..": "..amount)
-    
+
     -- Count stock
     local stock = 0
     for slot, item in pairs(storage.list()) do
@@ -222,7 +222,7 @@ local function giveItems(currency, amount)
 end
 
 local function withdraw(data)
-    
+
     if (data.amount == "" or data.amount == nil) then
         return false, "invalid_amount"
     end
@@ -270,7 +270,7 @@ local function withdraw(data)
 end
 
 while (true) do
-    local sender, message = rednet.receive("mermegold_customer")
+    local sender, message = rednet.receive("mermediamond_customer")
     if (tonumber(sender) == tonumber(linkedInterfaceID)) then
         if (message.action == "calculateValue") then
             processRequest(calculateValue, sender, message)

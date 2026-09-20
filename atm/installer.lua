@@ -16,10 +16,8 @@ end
 
 term.clear()
 term.setCursorPos(1,1)
-print("=== Auto setup ===")
-print("")
+print("=== ATM Setup ===")
 print("Hello! I am an ATM Assistant. I'm not the one that does customer service, but I help move and manage the stored money in an ATM. I can be a normal turtle, no need for an Advanced one.")
-print("")
 print("The ATM contraption itself requires a specific setup which I can build for you. I just need some items in my inventory.")
 print("")
 print("Press any key to continue...")
@@ -231,11 +229,39 @@ placeUp()
 selectItem("minecraft:barrel")
 place()
 
-print("Installing Mermegold ATM Assistant ...")
-fs.delete("bankapi.lua")
-shell.run("pastebin get wSKUaGG0 bankapi.lua") -- Bank API
+print("Installing Mermediamond ATM Assistant ...")
+
+-- Download the lang/ folder (translation files + tk() helper)
+print("Downloading language files...")
+fs.delete("lang")
+fs.makeDir("lang")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lang/languages.lua lang/languages.lua")
+local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
+for _, lang in ipairs(languages) do
+    shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lang/"..lang..".json lang/"..lang..".json")
+end
+if (fs.exists("lang/languages.lua")) then
+    print("Language files installed!")
+else
+    print("WARNING: language files failed to download.")
+    print("The ATM will show raw translation keys instead of text.")
+end
+
+print("Downloading updater...")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/updater.lua updater.lua")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/ver .mermediamond/ver")
+
+-- Download the split bank API modules into lib/
+print("Downloading bank API...")
+fs.delete("lib")
+fs.makeDir("lib")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/bankapi.lua lib/bankapi.lua")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/uilib.lua lib/uilib.lua")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/net.lua lib/net.lua")
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/cards.lua lib/cards.lua")
+
 fs.delete("startup.lua")
-shell.run("pastebin get 32EJUy53 startup.lua") -- ATM Assistant
+shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/atm/startup.lua startup.lua") -- ATM Assistant
 
 print("Dropping leftover items...")
 for i=1, 16 do

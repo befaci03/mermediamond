@@ -25,70 +25,12 @@ peripheral.find("modem", rednet.open)
 os.loadAPI("bankapi.lua")
 local serverData = bankapi.getServerData()
 local lang = serverData.lang
+
+-- Check for updates against the server before anything else
+bankapi.autoUpdate("admin")
 --------------------------
 
-local localization = {
-	en={
-		create_account = "Create new account",
-		perform_transaction = "Perform transaction",
-		check_balance = "Check balance",
-		delete_account = "Delete account",
-		record = "Transaction Logs",
-		assign_card = "Link account to card/phone",
-		install_app = "Install application on phone",
-		logout = "Exit",
-		new_account_steps = {"Username", "Representative color"},
-		transaction_steps = {"Sender account", "Recipient account", "Amount", "Transaction description"},
-		delete_account_steps = {"Cuenta a eliminar"},
-		check_log = {"Account to check"},
-		account_to_link = {"Account to link"},
-		linked_to = "Card linked to ",
-		insert_card = "Please insert disk or phone into disk drive",
-		installed = "Application installed!",
-		insert_pocket = "Please insert phone into disk drive",
-		confirm_deletion = "Are you sure you want to delete this account?"
-	},
-	es={
-		create_account = "Crear nueva cuenta",
-		perform_transaction = "Realizar transaccion",
-		check_balance = "Consultar balance",
-		delete_account = "Borrar cuenta",
-		record = "Historial de transacciones",
-		assign_card = "Vincular cuenta a tarjeta/movil",
-		install_app = "Instalar aplicacion en movil",
-		logout = "Salir",
-		new_account_steps = {"Nombre del usuario", "Color representativo"},
-		transaction_steps = {"Cuenta a proveer los fondos", "Cuenta a recibir los fondos", "Monto a enviar", "Descripcion de la transaccion"},
-		delete_account_steps = {"Cuenta a eliminar"},
-		check_log = {"Cuenta a consultar"},
-		account_to_link = {"Cuenta a vincular"},
-		linked_to = "Tarjeta asignada a ",
-		insert_card = "Por favor inserte un disco o un movil en la disquetera",
-		installed = "Aplicacion instalada!",
-		insert_pocket = "Por favor inserte un movil en la disquetera",
-		confirm_deletion = "Estas seguro que quieres borrar esta cuenta?"
-	},
-	de={
-		create_account = "Neues Konto erstellen",
-		perform_transaction = "Transaktion Durchfuehren",
-		check_balance = "Kontostand ueberpruefen",
-		delete_account = "Konto loeschen",
-		record = "Transaktions Logs",
-		assign_card = "Verbinde ein Konto mit eine/r/m Karte/Telefon",
-		install_app = "Installiere die Anwendung auf dem Telefon",
-		logout = "Ausloggen",
-		new_account_steps = {"Nutzername", "Anzeige Farbe"},
-		transaction_steps = {"Sender Konto", "Empfaenger Konto", "Betrag", "Transaktions Beschreibung"},
-		delete_account_steps = {"Konto zum Loeschen"},
-		check_log = {"Konto zum ueberpruefen"},
-		account_to_link = {"Konto zum Verbinden"},
-		linked_to = "Karte verbunden mit ",
-		insert_card = "Bitte legen Sie eine Disk oder ein Telefon in das Laufwerk ein",
-		installed = "Anwendung installiert!",
-		insert_pocket = "Bitte lege ein Telefon in das Laufwerk ein",
-		confirm_deletion = "Sind Sie sicher, dass Sie dieses Konto löschen möchten?"
-	}
-}
+-- Translations moved to lang/*.json, loaded by lang/languages.lua (provides tk())
 
 -- Password protection
 local pass = ""
@@ -97,7 +39,7 @@ repeat
 	term.setTextColor(colors.yellow)
 	term.clear()
 	local scrW, scrH = term.getSize()
-	local title = "Mermegold"
+	local title = "Mermediamond"
 	term.setCursorPos(scrW/2-string.len(title)/2, scrH/2)
 	term.write(title)
 	term.setCursorPos(scrW/2-string.len(title)/2, scrH/2+1)
@@ -106,28 +48,28 @@ until (pass == serverData.terminalPassword)
 
 while true do -- Second while to allow the use of breaks as continues
 while true do
-	
-	local command = bankapi.optionMenu("Mermegold", {
+
+	local command = bankapi.optionMenu("Mermediamond", {
 		{option = "new",
-		text = localization[lang].create_account},
+		text = tk("pocket.create_account")},
 		{option = "transaction",
-		text = localization[lang].perform_transaction},
+		text = tk("pocket.perform_transaction")},
 		{option = "balance",
-		text = localization[lang].check_balance},
+		text = tk("pocket.check_balance")},
 		{option = "delete",
-		text = localization[lang].delete_account},
+		text = tk("server.delete_account")},
 		{option = "log",
-		text = localization[lang].record},
-		{option = "assigncard",
-		text = localization[lang].assign_card},
+		text = tk("server.record")},
+		{option = "issuecard",
+		text = tk("card.issue")},
 		{option = "installapp",
-		text = localization[lang].install_app},
+		text = tk("pocket.install_app")},
 		{option = "logout",
-		text =  localization[lang].logout},
+		text =  tk("pocket.logout")},
 	}, 2, 36)
 
 	if (command == "new") then
-		local steps = localization[lang].new_account_steps
+		local steps = tk("server.new_account_steps")
 		local name = bankapi.inputTextScreen(steps, 1, 25)
 		if (name == nil) then break end
 		local color = bankapi.selectColorScreen(steps, 2)
@@ -138,7 +80,7 @@ while true do
 
 	elseif (command == "transaction") then
 		local tempClientData = bankapi.getClientData()
-		local steps = localization[lang].transaction_steps
+		local steps = tk("server.transaction_steps")
 		local from = bankapi.selectAccountScreen(steps, 1, 0)
 		if (from == nil) then break end
 		local to = bankapi.selectAccountScreen(steps, 2, from)
@@ -152,12 +94,12 @@ while true do
 		bankapi.responseScreen(success, message)
 
 	elseif (command == "delete") then
-		local steps = localization[lang].delete_account_steps
+		local steps = tk("server.delete_account_steps")
 		local deletion = bankapi.selectAccountScreen(steps, 1, 0)
 		if (deletion == nil) then break end
 
 		local tempClientData = bankapi.getClientData()
-		local accept = bankapi.confirmScreen({localization[lang].confirm_deletion}, {
+		local accept = bankapi.confirmScreen({tk("server.confirm_deletion")}, {
 			name = tempClientData[deletion].name,
 			key = deletion,
 			balance = tempClientData[deletion].balance
@@ -169,49 +111,73 @@ while true do
 
 	elseif (command == "log") then
 		local tempClientData = bankapi.getClientData()
-		local steps = localization[lang].check_log
+		local steps = tk("server.check_log")
 		local account = bankapi.selectAccountScreen(steps, 1, 0)
 		if (account == nil) then break end
 		bankapi.transactionLogScreen(account)
 
 	elseif (command == "balance") then
-		
-		local account = bankapi.selectAccountScreen(localization[lang].check_log, 1, 0)
+
+		local account = bankapi.selectAccountScreen(tk("server.check_log"), 1, 0)
 		if (account == nil) then break end
 		bankapi.showBalance(account)
 
-	elseif (command == "assigncard") then
-		if (fs.exists("disk")) then
-			local account = bankapi.selectAccountScreen(localization[lang].account_to_link, 1, 0)
-			if (account == nil) then break end
-			local tempClientData = bankapi.getClientData()
-			local name = tempClientData[account].name
-			local f = fs.open("disk/mermegold.txt", "w")
-			f.write(account)
-			f.close()
-			local diskdrive = peripheral.find("drive")
-			diskdrive.setDiskLabel("Mermegold | "..name)
-			bankapi.successScreen(localization[lang].linked_to..name)
-		else
-			bankapi.errorScreen(localization[lang].insert_card)
+	elseif (command == "issuecard") then
+		-- Paper cards: the server generates the card, the admin prints it
+		local account = bankapi.selectAccountScreen(tk("pocket.account_to_link"), 1, 0)
+		if (account == nil) then break end
+		local tempClientData = bankapi.getClientData()
+		local name = tempClientData[account].name
+		local success, card = bankapi.assignCard(account)
+		if (not success) then
+			bankapi.errorScreen(card)
+			break
 		end
-	
+		-- Show the card on screen too, in case there is no printer
+		bankapi.waitScreen({
+			tk("card.printed_header"),
+			"",
+			tk("card.holder")..": "..name,
+			tk("card.card_id")..": "..card.cardId,
+			tk("card.expires")..": "..card.expiration,
+			tk("card.cvc")..": "..card.cvc,
+			tk("card.account")..": "..card.account
+		})
+		local printed = bankapi.printCard(card, name, card.account)
+		if (printed) then
+			bankapi.successScreen(tk("card.printed"))
+		else
+			bankapi.successScreen({tk("card.holder")..": "..name, tk("card.card_id")..": "..card.cardId})
+		end
+
 	elseif (command == "installapp") then
 		if (fs.exists("disk")) then
 			term.setBackgroundColor(colors.black)
 			term.setTextColor(colors.white)
 			term.setCursorPos(1,1)
 			term.clear()
-			print("Installing Mermegold app in inserted phone...")
+			print("Installing Mermediamond app in inserted phone...")
 			shell.run("delete disk/startup.lua")
-			shell.run("pastebin get GpTzmZts disk/startup.lua")
-			shell.run("delete disk/bankapi.lua")
-			shell.run("pastebin get wSKUaGG0 disk/bankapi.lua")
-			shell.run("delete disk/mermeapp.lua")
-			shell.run("pastebin get Nc59jRaa disk/mermeapp.lua")
-			bankapi.successScreen(localization[lang].installed)
+			shell.run("copy phone/app.lua disk/startup.lua")
+			-- Copy the split bank API modules
+			fs.delete("disk/lib")
+			fs.makeDir("disk/lib")
+			fs.copy("lib/bankapi.lua", "disk/lib/bankapi.lua")
+			fs.copy("lib/uilib.lua", "disk/lib/uilib.lua")
+			fs.copy("lib/net.lua", "disk/lib/net.lua")
+			fs.copy("lib/cards.lua", "disk/lib/cards.lua")
+			-- Copy the language files so tk() works on the phone
+			fs.delete("disk/lang")
+			fs.makeDir("disk/lang")
+			for _, langFile in ipairs(fs.list("lang")) do
+				fs.copy("lang/"..langFile, "disk/lang/"..langFile)
+			end
+			-- Copy the updater so the phone can update itself
+			if (fs.exists("updater.lua")) then fs.copy("updater.lua", "disk/updater.lua") end
+			if (fs.exists(".mermediamond/ver")) then fs.copy(".mermediamond/ver", "disk/ver") end
+			bankapi.successScreen(tk("pocket.installed"))
 		else
-			bankapi.errorScreen(localization[lang].insert_pocket)
+			bankapi.errorScreen(tk("pocket.insert_pocket"))
 		end
 
 	elseif (command == "logout") then

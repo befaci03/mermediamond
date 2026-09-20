@@ -1,10 +1,30 @@
--- Mermegold Installer Disk
+-- Mermediamond Installer Disk
+
+local repoBase = "https://raw.githubusercontent.com/befaci03/mermediamond"
+local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
+
+-- Downloads the lang/ folder (translation files + tk() helper)
+-- plus the updater API and its ver file.
+-- Required by bankapi.lua and every program's localization.
+function installLangFiles()
+    print("Downloading language files...")
+    fs.delete("lang")
+    fs.makeDir("lang")
+    shell.run("wget "..repoBase.."/lang/languages.lua lang/languages.lua")
+    for _, lang in ipairs(languages) do shell.run("wget "..repoBase.."/lang/"..lang..".json lang/"..lang..".json") end
+    if (fs.exists("lang/languages.lua")) then print("Language files installed!") else
+        print("WARNING: language files failed to download.")
+        print("Programs will show raw translation keys instead of text.")
+    end
+
+    print("Downloading updater...")
+    shell.run("wget "..repoBase.."/updater.lua updater.lua")
+    shell.run("wget "..repoBase.."/ver .mermediamond/ver")
+end
 
 function quit()
     local diskdrive = peripheral.find("drive")
-    if (diskdrive.isDiskPresent()) then
-        diskdrive.ejectDisk()
-    end
+    if (diskdrive.isDiskPresent()) then diskdrive.ejectDisk() end
     print("Disk ejected")
     print("Rebooting...")
     sleep(1)
@@ -16,65 +36,62 @@ function optionsMenu(title, description, options)
     while true do
         term.clear()
         term.setCursorPos(1,1)
-
         print("=== "..title.." ===")
         print()
 
-        for k, v in pairs(description) do
-            print(v)
-        end
+        for _, v in pairs(description) do print(v) end
         print()
-
         for k, v in pairs(options) do
             local text = v
-            if (selectedOption == k) then
-                text = "-> "..v.." <-"
-            else
-                text = "   "..v
-            end
+            if (selectedOption == k) then text = "-> "..v.." <-"
+            else text = "   "..v end
             print(text)
         end
 
-        local event, key, is_held = os.pullEvent("key")
-        local keyName = keys.getName(key)
-        if (keyName == "w" or keyName == "up") then
+        local _,k,_ = os.pullEvent("key")
+        local keyName = keys.getName(k)
+        if (keyName == "up") then
             selectedOption = selectedOption - 1
-            if (selectedOption <= 0) then
-                selectedOption = #options
-            end
-        elseif (keyName == "s" or keyName == "down") then
+            if (selectedOption <= 0) then selectedOption = #options end
+        elseif (keyName == "down") then
             selectedOption = selectedOption + 1
             if (selectedOption > #options) then
                 selectedOption = 1
             end
-        elseif (keyName == "d" or keyName == "right" or keyName == "enter" or keyName == "space") then
+        elseif (keyName == "right" or keyName == "enter" or keyName == "space") then
             return selectedOption
         end
     end
 end
 
+-- Downloads the split bank API modules into lib/
+function installBankAPI()
+    print("Downloading bank API...")
+    fs.delete("lib")
+    fs.makeDir("lib")
+    shell.run("wget "..repoBase.."/lib/bankapi.lua lib/bankapi.lua")
+    shell.run("wget "..repoBase.."/lib/uilib.lua lib/uilib.lua")
+    shell.run("wget "..repoBase.."/lib/net.lua lib/net.lua")
+    shell.run("wget "..repoBase.."/lib/cards.lua lib/cards.lua")
+    if (fs.exists("lib/bankapi.lua") and fs.exists("lib/uilib.lua") and fs.exists("lib/net.lua") and fs.exists("lib/cards.lua")) then
+        print("Bank API installed!")
+    else print("WARNING: bank API failed to download.") end
+end
+
 function installStoreClerk()
-    print("Installing Mermegold Store Clerk...")
-    fs.delete("bankapi.lua")
-    shell.run("pastebin get wSKUaGG0 bankapi.lua") -- Bank API
+    print("Installing Mermediamond Store Clerk...")
+    installLangFiles()
+    installBankAPI()
     fs.delete("startup.lua")
-    shell.run("pastebin get pgw11ZAq startup.lua") -- Store clerk
+    shell.run("wget "..repoBase.."/shopClerk/startup.lua startup.lua") -- Store clerk
     quit()
 end
 
 function installATMTurtle()
-    print("Installing Mermegold ATM Assistant ...")
-    fs.delete("bankapi.lua")
-    shell.run("pastebin get wSKUaGG0 bankapi.lua") -- Bank API
-    fs.delete("startup.lua")
-    shell.run("pastebin get 32EJUy53 startup.lua") -- ATM Assistant
-    quit()
-end
-
-function installATMTurtleWithAutoSetup()
-    print("Installing Mermegold ATM Assistant ...")
+    print("Installing Mermediamond ATM Assistant ...")
+    installLangFiles()
     fs.delete("autosetup.lua")
-    shell.run("pastebin get 0dSekuU1 autosetup.lua") -- ATM Assistant autosetup
+    shell.run("wget "..repoBase.."/atm/installer.lua autosetup.lua") -- ATM Assistant autosetup
     print("Running autosetup...")
     sleep(1)
     shell.run("autosetup")
@@ -82,61 +99,28 @@ function installATMTurtleWithAutoSetup()
 end
 
 function installBankServer()
-    print("Installing Mermegold Bank Server...")
-    fs.delete("bankapi.lua")
-    shell.run("pastebin get wSKUaGG0 bankapi.lua") -- Bank API
+    print("Installing Mermediamond Bank Server...")
+    installLangFiles()
+    installBankAPI()
     fs.delete("startup.lua")
-    shell.run("pastebin get NFdQ6Epa startup.lua") -- Bank Server
+    shell.run("wget "..repoBase.."/server/startup.lua startup.lua") -- Bank Server
     quit()
 end
 
 function installAdminTerminal()
-    print("Installing Mermegold Admin terminal...")
-    fs.delete("bankapi.lua")
-    shell.run("pastebin get wSKUaGG0 bankapi.lua") -- Bank API
+    print("Installing Mermediamond Admin terminal...")
+    installLangFiles()
+    installBankAPI()
     fs.delete("startup.lua")
-    shell.run("pastebin get eksCPqRa startup.lua") -- Admin Terminal
+    shell.run("wget "..repoBase.."/admin/startup.lua startup.lua") -- Admin Terminal
     quit()
-end
-
-function installATMInterface()
-    print("Installing Mermegold ATM terminal...")
-    fs.delete("bankapi.lua")
-    shell.run("pastebin get wSKUaGG0 bankapi.lua") -- Bank API
-    fs.delete("startup.lua")
-    shell.run("pastebin get cWMVXkrv startup.lua") -- ATN Terminal
-    quit()
-end
-
-function manuallyInstallATMInterface()
-    local selectedOption = optionsMenu("Manually install program", {"There is a turtle program that will automatically setup an entire ATM machine, including a computer with this program. Are you sure you want to install manually anyways?"}, {
-        "No, go back",
-        "Yes, I know what I'm doing"
-    })
-    if (selectedOption == 1) then
-        mainMenu()
-    elseif (selectedOption == 2) then
-        installATMInterface()
-    end
-end
-
-function manuallyInstallATMTurtle()
-    local selectedOption = optionsMenu("Manually install program", {"There is a turtle program that will automatically setup not only this turtle, but an entire ATM machine, including building the contraption and installing the terminal. Are you sure you want to install manually anyways?"}, {
-        "No, go back",
-        "Yes, I know what I'm doing"
-    })
-    if (selectedOption == 1) then
-        mainMenu()
-    elseif (selectedOption == 2) then
-        installATMTurtle()
-    end
 end
 
 function showHelp()
     term.clear()
     term.setCursorPos(1,1)
     while (true) do
-        local selectedOption = optionsMenu("Help", {"Mermegold Bank needs a few different computers and turtles to run."},
+        local selectedOption = optionsMenu("Help", {"Mermediamond Bank needs a few different computers and turtles to run."},
         {
             "Bank Server",
             "Admin Terminal",
@@ -175,7 +159,7 @@ function showHelp()
             print("=== Store Clerk ===")
             print("")
             print("The Store Clerk is an Advanced Turtle with an Ender modem on top of a disk drive, looking at a barrel or chest.")
-            print("It acts as a checkout for stores, where you can configure prices and names. People who use your shop can insert their card into the disk drive, get an automatic tally of the price of their items, and pay with their Mermegold account directly.")
+            print("It acts as a checkout for stores, where you can configure prices and names. People who use your shop can insert their card into the disk drive, get an automatic tally of the price of their items, and pay with their Mermediamond account directly.")
             print("")
             print("Press any key to go back...")
             os.pullEvent("key")
@@ -191,45 +175,24 @@ function mainMenu()
         local options = {
             "Help",
             "Install Store Clerk",
-            "Install ATM turtle w/ auto-setup",
-            "(Manually Install ATM turtle)",
+            "Install ATM",
             "Cancel and eject",
         }
-        if (fs.exists("autosetup.lua")) then
-            table.insert(options, "Run ATM Turtle autosetup")
-        end
-        local selectedOption = optionsMenu("Install Mermegold program", {"For Turtles"}, options)
-        if (selectedOption == 1) then
-            showHelp()
-        elseif (selectedOption == 2) then
-            installStoreClerk()
-        elseif (selectedOption == 3) then
-            installATMTurtleWithAutoSetup()
-        elseif (selectedOption == 4) then
-            manuallyInstallATMTurtle()
-        elseif (selectedOption == 5) then
-            quit()
-        elseif (selectedOption == 6) then
-            shell.run("autosetup")
-        end
+        local selectedOption = optionsMenu("Install Mermediamond program", {"For Turtles"}, options)
+        if (selectedOption == 1) then showHelp()
+        elseif (selectedOption == 2) then installStoreClerk()
+        elseif (selectedOption == 3) then installATMTurtle()
+        else quit() end
     else
-        local selectedOption = optionsMenu("Install Mermegold program", {"For Computer"}, {
+        local selectedOption = optionsMenu("Install Mermediamond program", {"For Computer"}, {
             "Help",
             "Install Bank Server",
             "Install Admin terminal",
-            "(Manually Install ATM interface)",
             "Cancel and eject"
         })
-        if (selectedOption == 1) then
-            showHelp()
-        elseif (selectedOption == 2) then
-            installBankServer()
-        elseif (selectedOption == 3) then
-            installAdminTerminal()
-        elseif (selectedOption == 4) then
-            manuallyInstallATMInterface()
-        else
-            quit()
-        end
+        if (selectedOption == 1) then showHelp()
+        elseif (selectedOption == 2) then installBankServer()
+        elseif (selectedOption == 3) then installAdminTerminal()
+        else quit() end
     end
 end

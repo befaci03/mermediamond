@@ -34,136 +34,31 @@ peripheral.find("modem", rednet.open)
 local serverData = bankapi.getServerData()
 local lang = serverData.lang
 
+-- Check for updates against the server before anything else
+bankapi.autoUpdate("phone")
+
 local currentAccount = 0
 
-local localization = {
-	en={
-		welcome="Welcome!",
-		unregistered={"Please register","this device with","a Mermegold","employee"},
-		login = "Log In",
-		info = "What is Mermegold",
-		info_screen = {
-			"Welcome to Mermegold!",
-			"",
-			"With your Mermegold card",
-			"you won't need to have",
-			"money on you ever again. ",
-			"You will be able to make",
-			"remote transactions and",
-			"have a full movement log.",
-			"",
-			"You can also install",
-			"automated store clerks at",
-			"your shops with catalogues",
-			"and automatic checkout.",
-			"",
-			"Payments will end up in",
-			"your account. No more",
-			"shuffling through chests",
-			"to collect your payments!"
-		},
-		create_account = "How to make an account",
-		create_account_screen = {
-			"","","","","","","",
-			"To make an account,",
-			"contact your local",
-			"Mermegold employee and",
-			"arrange a meeting.",
-			"You will open an account",
-			"together at the bank."
-		},
-		check_balance = "Balance",
-		perform_transaction = "Transaction",
-		history = "Log",
-		logout = "Exit",
-		transaction_instructions = {"Recipient account", "Amount to send", "Description"}
-	},
-	es={
-		welcome="Bienvenido!",
-		unregistered={"Por favor registre","el dispositivo","con un empleado","de Mermegold"},
-		login = "Ingresar",
-		info = "Que es Mermegold",
-		create_account = "Como crear una cuenta",
-		info_screen = {
-			"Bienvenido a Mermegold!",
-			"",
-			"Con tu tarjeta mermegold,",
-			"no tendras que llevar",
-			"dinero encima nunca mas.",
-			"Podras hacer transacciones",
-			"remotas y tendras un",
-			"historial completo.",
-			"",
-			"Podras poner maquinas en",
-			"tu local con catalogos",
-			"que calculen el total de",
-			"forma automatica, y todos",
-			"los pagos iran a tu",
-			"cuenta. No mas revolver",
-			"cofres para recolectar",
-			"pagos!"
-		},
-		create_account_screen = {
-			"",
-			"",
-			"Para hacerse una cuenta,",
-			"contactese con un empleado",
-			"de Mermegold y arregle una",
-			"cita. Abriran juntos la",
-			"cuenta en el banco."
-		},
-		check_balance = "Balance",
-		perform_transaction = "Transaccion",
-		history = "Historial",
-		logout = "Exit",
-		transaction_instructions = {"Cuenta a recibir los fondos", "Monto a enviar", "Descripcion"}
-	},
-	de={
-		welcome="Willkommen!",
-		unregistered={"Bitte melde","dieses Geraet mit","einem Mermegold","Mitarbeiter an"},
-		login = "Anmelden",
-		info = "Was ist Mermegold",
-		info_screen = {
-		"Willkommen bei Mermegold!",
-		"",
-		"Mit ihrer Mermegold Karte",
-		"brauchst du nie wieder",
-		"geld dabei zu haben. ",
-		"Du wirst in der Lage sein",
-		"Transaktionen ferngesteuert mit",
-		 "vollstaendigen Log zu erledigen.",
-		"",
-		"Außerdem koennen Sie",
-		"automatisierte shop clerks",
-		"mit katalogen und automatischem",
-		"checkout an ihren shops installieren.",
-		"",
-		"Zahlungen werden automatisch in",
-		"Ihrem Konto landen ",
-		"ohne das sie mueselig durch",
-		"Kisten suchen muessen"
-		},
-		create_account = "Wie erstelle ich ein Konto?",
-		create_account_screen = {
-		"", "", "", "", "", "", "",
-		"Um ein Konto zu eröffnen,",
-		"wenden Sie sich an eine*n",
-		"Mermegold-Mitarbeiter*in",
-		"und vereinbaren Sie einen Termin.",
-		"Das Konto wird gemeinsam",
-		"in der Bank eröffnet."
-		},
-		check_balance = "Kontostandt",
-		perform_transaction = "Transaktion",
-		history = "Log",
-		logout = "Abmelden",
-		transaction_instructions = {"Empfaenger Konto", "Zu Sendender Betrag", "Beschreibung"}
-	},
-}
+-- Translations moved to lang/*.json, loaded by lang/languages.lua (provides tk())
 
+-- Log in with a printed paper card: type the card's machine line, then validate against the server
+local function loginWithCard()
+	while (true) do
+		local card = bankapi.readPrintedCard(tk("card.login_steps"))
+		if (card == nil) then return nil end
+		local success, result = bankapi.cardLogin(card)
+		if (success) then
+			return result -- account id
+		else
+			local msg = result
+			if (msg == nil or msg == "") then msg = tk("card.invalid_card") end
+			bankapi.errorScreen(msg)
+		end
+	end
+end
 
-if (fs.exists("mermegold.txt")) then
-	local f = fs.open("mermegold.txt", "r")
+if (fs.exists("mermediamond.txt")) then
+	local f = fs.open("mermediamond.txt", "r")
 	if (f ~= nil) then
 		local value = f.readLine()
 		if (value ~= nil) then
@@ -172,6 +67,7 @@ if (fs.exists("mermegold.txt")) then
 				currentAccount = value
 			end
 		end
+		f.close()
 	end
 end
 
@@ -180,43 +76,47 @@ while true do
 	local tempClientData = bankapi.getClientData()
 	local command
 	if (tempClientData[currentAccount] == nil) then -- Guest screen
-		command = bankapi.optionMenu(localization[lang].welcome, {
+		command = bankapi.optionMenu(tk("pocket.welcome"), {
 			[1] = {
 			["option"] = "login",
-			["text"] = localization[lang].login},
+			["text"] = tk("pocket.login")},
 			[2] = {
 			["option"] = "info",
-			["text"] = localization[lang].info},
+			["text"] = tk("pocket.info")},
 			[3] = {
 			["option"] = "createaccount",
-			["text"] = localization[lang].create_account},
+			["text"] = tk("pocket.create_account")},
 		})
 
 		if (command == "login") then
-			local accept = bankapi.confirmScreen(localization[lang].unregistered)
-			if (accept) then
-				os.reboot()
+			local account = loginWithCard()
+			if (account ~= nil) then
+				currentAccount = account
+				-- Remember the account on the phone for next time
+				local f = fs.open("mermediamond.txt", "w")
+				f.writeLine(account)
+				f.close()
 			end
 		elseif (command == "info") then
-			bankapi.textScreen(localization[lang].info_screen)
+			bankapi.textScreen(tk("pocket.info_screen"))
 		elseif (command == "createaccount") then
-			bankapi.textScreen(localization[lang].create_account_screen)
+			bankapi.textScreen(tk("pocket.create_account_screen"))
 		end
 	else
 		local line = string.rep(string.char(140), 3)
 		command = bankapi.optionMenu(line.." "..tempClientData[currentAccount].name.." "..line, {
 			[1] = {
 			["option"] = "balance",
-			["text"] = localization[lang].check_balance},
+			["text"] = tk("pocket.check_balance")},
 			[2] = {
 			["option"] = "transaction",
-			["text"] = localization[lang].perform_transaction},
+			["text"] = tk("pocket.perform_transaction")},
 			[3] = {
 			["option"] = "log",
-			["text"] = localization[lang].history},
+			["text"] = tk("pocket.history")},
 			[4] = {
 			["option"] = "quit",
-			["text"] = localization[lang].logout},
+			["text"] = tk("pocket.logout")},
 		}, 2, 24)
 
 		if (command == "balance") then
@@ -227,7 +127,7 @@ while true do
 
 		elseif (command == "transaction") then
 			local tempClientData = bankapi.getClientData()
-			local steps = localization[lang].transaction_instructions
+			local steps = tk("pocket.transaction_instructions")
 			local to = bankapi.selectAccountScreen(steps, 1, currentAccount)
 			if (to == nil) then break end
 			local amount = bankapi.inputNumberScreen(steps, 2, tempClientData[currentAccount].balance)
@@ -239,6 +139,7 @@ while true do
 			bankapi.responseScreen(success, message)
 
 		elseif (command == "quit") then
+			fs.delete("mermediamond.txt")
 			os.shutdown()
 		end
 	end
