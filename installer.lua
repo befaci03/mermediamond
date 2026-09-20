@@ -1,6 +1,7 @@
 -- Mermediamond Installer Disk
 
-local repoBase = "https://raw.githubusercontent.com/befaci03/mermediamond"
+local branch = "main"
+local repoBase = "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..branch
 local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
 
 -- Downloads the lang/ folder (translation files + tk() helper)
@@ -196,3 +197,5 @@ function mainMenu()
         else quit() end
     end
 end
+
+mainMenu()

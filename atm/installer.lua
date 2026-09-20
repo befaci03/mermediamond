@@ -5,6 +5,9 @@ local computers = 0
 local enderModems = 0
 local craftingTables = 0
 
+local branch = "main"
+local baseUrl = "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..branch
+
 function checklistItem(text, currentAmount, amountNeeded)
     local check = "[ ] "
     if (currentAmount >= amountNeeded) then
@@ -235,10 +238,10 @@ print("Installing Mermediamond ATM Assistant ...")
 print("Downloading language files...")
 fs.delete("lang")
 fs.makeDir("lang")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lang/languages.lua lang/languages.lua")
+shell.run("wget "..baseUrl.."/lang/languages.lua lang/languages.lua")
 local languages = { "en-us", "en-gb", "en-au", "es-es", "de-de", "de-at", "fr-fr", "fr-be", "nl-nl", "it-it", "pt-br", "ru-ru", "ar-sa", "tr-tr", "sv-se", "ja-jp", "zh-cn", "ko-kr", "hu-hu", "fi-fi", "da-dk", "nb-no", "cs-cz", "el-gr", "ro-ro" }
 for _, lang in ipairs(languages) do
-    shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lang/"..lang..".json lang/"..lang..".json")
+    shell.run("wget "..baseUrl.."/lang/"..lang..".json lang/"..lang..".json")
 end
 if (fs.exists("lang/languages.lua")) then
     print("Language files installed!")
@@ -248,20 +251,20 @@ else
 end
 
 print("Downloading updater...")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/updater.lua updater.lua")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/ver .mermediamond/ver")
+shell.run("wget "..baseUrl.."/updater.lua updater.lua")
+shell.run("wget "..baseUrl.."/ver .mermediamond/ver")
 
 -- Download the split bank API modules into lib/
 print("Downloading bank API...")
 fs.delete("lib")
 fs.makeDir("lib")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/bankapi.lua lib/bankapi.lua")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/uilib.lua lib/uilib.lua")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/net.lua lib/net.lua")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/lib/cards.lua lib/cards.lua")
+shell.run("wget "..baseUrl.."/lib/bankapi.lua lib/bankapi.lua")
+shell.run("wget "..baseUrl.."/lib/uilib.lua lib/uilib.lua")
+shell.run("wget "..baseUrl.."/lib/net.lua lib/net.lua")
+shell.run("wget "..baseUrl.."/lib/cards.lua lib/cards.lua")
 
 fs.delete("startup.lua")
-shell.run("wget https://raw.githubusercontent.com/befaci03/mermediamond/atm/startup.lua startup.lua") -- ATM Assistant
+shell.run("wget "..baseUrl.."/atm/startup.lua startup.lua") -- ATM Assistant
 
 print("Dropping leftover items...")
 for i=1, 16 do

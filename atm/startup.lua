@@ -77,10 +77,8 @@ local function reduceStorage(data)
         if(v.uprecipe ~= nil) then
             -- Count how much we have stored
             local stored = 0
-            for slot, item in pairs(storage.list()) do
-                if (item.name == v.id) then
-                    stored = stored + item.count
-                end
+            for _, item in pairs(storage.list()) do
+                if (item.name == v.id) then stored = stored + item.count end
             end
 
             -- See how many compression recipes we can make
@@ -272,14 +270,9 @@ end
 while (true) do
     local sender, message = rednet.receive("mermediamond_customer")
     if (tonumber(sender) == tonumber(linkedInterfaceID)) then
-        if (message.action == "calculateValue") then
-            processRequest(calculateValue, sender, message)
-        elseif (message.action == "deposit") then
-            processRequest(deposit, sender, message)
-        elseif (message.action == "withdraw") then
-            processRequest(withdraw, sender, message)
-        elseif (message.action == "reduce") then
-            processRequest(reduceStorage, sender, message)
-        end
+        if (message.action == "calculateValue") then processRequest(calculateValue, sender, message)
+        elseif (message.action == "deposit") then processRequest(deposit, sender, message)
+        elseif (message.action == "withdraw") then processRequest(withdraw, sender, message)
+        elseif (message.action == "reduce") then processRequest(reduceStorage, sender, message) end
     end
 end

@@ -21,11 +21,8 @@ end
 
 -- Load the updater API if it isn't loaded yet
 if (updateAvailable == nil) then
-    if (fs.exists("updater.lua")) then
-        os.loadAPI("updater.lua")
-    elseif (fs.exists("../updater.lua")) then
-        os.loadAPI("../updater.lua")
-    end
+    if (fs.exists("updater.lua")) then os.loadAPI("updater.lua")
+    elseif (fs.exists("../updater.lua")) then os.loadAPI("../updater.lua") end
 end
 
 -------------------- Load the modules --------------------
@@ -33,27 +30,19 @@ end
 -- load bankapi.lua from lib/, phones from disk/lib/, etc.)
 local function findModule(name)
     local candidates = { "lib/"..name, name, "disk/lib/"..name, "../lib/"..name }
-    for _, path in ipairs(candidates) do
-        if (fs.exists(path)) then return path end
-    end
+    for _, path in ipairs(candidates) do if (fs.exists(path)) then return path end end
     return "lib/"..name
 end
 
 local uilibPath = findModule("uilib.lua")
 local netPath = findModule("net.lua")
 
-if (uilib == nil) then
-    os.loadAPI(uilibPath) -- exposes the global `uilib`
-end
-if (net == nil) then
-    os.loadAPI(netPath) -- exposes the global `net`
-end
+if (uilib == nil) then os.loadAPI(uilibPath) end
+if (net == nil) then os.loadAPI(netPath) end
 if (uilib == nil) then error("uilib module failed to load from "..uilibPath) end
 
 -- Cards depend on the UI module
-if (cards == nil) then
-    os.loadAPI(findModule("cards.lua")) -- exposes the global `cards`
-end
+if (cards == nil) then os.loadAPI(findModule("cards.lua")) end
 
 -------------------- Re-exports under classic bankapi.* names --------------------
 
@@ -138,9 +127,7 @@ function showBalance(key)
 
     while true do
         local event = os.pullEvent()
-        if (event == "mouse_click" or event == "key") then
-            break
-        end
+        if (event == "mouse_click" or event == "key") then break end
     end
 end
 
@@ -186,9 +173,7 @@ function transactionLogScreen(key)
     local logs = {}
 
     local logCount = #backwardsLogs
-    for i=0, logCount do
-        logs[logCount-i] = backwardsLogs[i+1] -- Newest first
-    end
+    for i=0, logCount do logs[logCount-i] = backwardsLogs[i+1] end
 
     local scrW, scrH = term.getSize()
     local y = 2
@@ -196,9 +181,7 @@ function transactionLogScreen(key)
     local x = 1
     local w = scrW
 
-    if (pocket) then
-        floor = 2
-    end
+    if (pocket) then floor = 2 end
 
     local first = 0
     local logHeight = 2
@@ -253,11 +236,8 @@ function transactionLogScreen(key)
                 buttons[y+i] = k
 
                 local name
-                if (tempClientData[v.other] ~= nil) then
-                    name = tempClientData[v.other].name
-                else
-                    name = tk("api.deleted")
-                end
+                if (tempClientData[v.other] ~= nil) then name = tempClientData[v.other].name
+                else name = tk("api.deleted") end
 
                 term.setTextColor(colors.lightGray)
                 term.write("#"..order.." ")
@@ -266,14 +246,9 @@ function transactionLogScreen(key)
                 term.write(name.." ")
 
                 term.setCursorPos(scrW*0.3, y+i)
-                if (pocket) then
-                    term.setCursorPos(scrW*0.5, y+i)
-                end
-                if (tonumber(v.amount) >= 0) then
-                    term.setTextColor(colors.green)
-                else
-                    term.setTextColor(colors.red)
-                end
+                if (pocket) then term.setCursorPos(scrW*0.5, y+i) end
+                if (tonumber(v.amount) >= 0) then term.setTextColor(colors.green)
+                else term.setTextColor(colors.red)  end
                 term.write(amountText)
 
                 if (pocket == nil) then
@@ -284,9 +259,7 @@ function transactionLogScreen(key)
 
                 term.setTextColor(colors.lightGray)
                 local time = v.time
-                if (pocket) then
-                    time = string.sub(v.time, 1, 5)
-                end
+                if (pocket) then time = string.sub(v.time, 1, 5) end
                 term.setCursorPos(scrW-string.len(time),y+i)
                 term.write(" "..time)
 
@@ -323,33 +296,21 @@ function transactionLogScreen(key)
             local cx = eventData[3]
             local cy = eventData[4]
             if (uilib.mouseInButton(prevPage, cx, cy)) then
-                if (first > 0) then
-                    first = first-max
-                end
+                if (first > 0) then first = first-max end
             end
             if (uilib.mouseInButton(nextPage, cx, cy)) then
-                if (first+max < totalLogs) then
-                    first = first+max
-                end
+                if (first+max < totalLogs) then first = first+max end
             end
             if (cx >= x and cx <= x+w and cy >= y) then
-                if buttons[cy] ~= nil then
-                    transactionInfoScreen(logs[buttons[cy]])
-                end
+                if buttons[cy] ~= nil then transactionInfoScreen(logs[buttons[cy]]) end
             end
-            if (uilib.mouseInButton(backButton, cx, cy)) then
-                return nil
-            end
+            if (uilib.mouseInButton(backButton, cx, cy)) then return nil end
         elseif event == "mouse_scroll" then
             local scroll = eventData[2]
             if (scroll < 0) then
-                if (first > 0) then
-                    first = first-max
-                end
+                if (first > 0) then first = first-max end
             else
-                if (first+max < totalLogs) then
-                    first = first+max
-                end
+                if (first+max < totalLogs) then first = first+max end
             end
         end
     end
@@ -361,8 +322,6 @@ end
 
 function selectAccountScreen(steps, currentStep, disabledAccount, overrideClientData)
     local clientData = overrideClientData
-    if (clientData == nil) then
-        clientData = getClientData()
-    end
+    if (clientData == nil) then clientData = getClientData() end
     return uilib.selectAccountScreen(steps, currentStep, disabledAccount, clientData)
 end

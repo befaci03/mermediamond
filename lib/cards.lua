@@ -15,7 +15,7 @@ local U = uilib -- injected by lib/bankapi.lua before this file loads
 
 -- Read the card by typing/pasting the machine line (CC cannot scan paper)
 function C.readPrintedCard(title)
-    local scrW, scrH = term.getSize()
+    local _, scrH = term.getSize()
     while true do
         U.drawBackground()
         term.setTextColor(U.specialTextColor)

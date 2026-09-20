@@ -153,8 +153,6 @@ end
 local active = normalizeLang(_G.activeLang or settings.get("lang") or "en-us")
 local loadedLang = loadLang(active)
 if (loadedLang == nil) then loadedLang = loadLang("en-us") end
-if (loadedLang ~= nil) then
-	for k, v in pairs(loadedLang) do _G[k] = v end
-end
+if (loadedLang ~= nil) then for k, v in pairs(loadedLang) do _G[k] = v end end
 
 _G.tk = tk

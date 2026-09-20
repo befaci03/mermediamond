@@ -9,7 +9,8 @@
 -- itself via the "getfile" action (chunked file transfer), with a
 -- GitHub raw download as fallback.
 
-local function getRepoBase() return "https://raw.githubusercontent.com/befaci03/mermediamond" end
+local branch = "main"
+local function getRepoBase() return "https://raw.githubusercontent.com/befaci03/mermediamond/refs/heads/"..branch end
 
 -- Repo path -> local path on an installed machine.
 -- Every installer saves the program it runs as startup.lua.
